@@ -130,6 +130,8 @@ export default function Home() {
             <br />
             <span className="text-muted">네 개의 단계.</span>
             <br />
+            <span className="text-muted">열한 개의 에이전트.</span>
+            <br />
             체계적인 개발.
           </h1>
           <p className="text-muted text-lg max-w-xl mb-12 animate-fade-up animate-delay-2">
@@ -155,7 +157,7 @@ export default function Home() {
                   </span>
                   <span className="text-sm">{phase.label}</span>
                 </div>
-                {i < 3 && (
+                {i < phases.length - 1 && (
                   <span className="text-dim text-xs font-mono">&rarr;</span>
                 )}
               </div>
@@ -201,6 +203,130 @@ export default function Home() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Team Mode */}
+      <section id="team" className="pb-32 px-6">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-accent font-mono text-xs tracking-widest uppercase mb-6">
+            NEW in v2.1
+          </p>
+          <h2 className="text-2xl font-light mb-4">
+            복잡한 작업은 <span className="text-accent">팀</span>으로
+          </h2>
+          <p className="text-muted leading-relaxed mb-8 max-w-2xl">
+            AI가 작업 복잡도를 자동으로 판단하여, 필요할 때 11개 전문 에이전트를
+            병렬로 투입합니다. 하나의 명령어로 분석부터 리뷰까지 — 혼자 또는
+            팀으로.
+          </p>
+
+          <div className="bg-card border border-border rounded-md px-4 py-2 mb-10 inline-block">
+            <code className="font-mono text-sm text-accent">
+              /vibe &quot;team 인증 시스템 전체 분석&quot;
+            </code>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mb-12">
+            <div className="p-6 bg-card border border-border rounded-lg">
+              <h3 className="text-sm font-medium mb-3">자동 감지</h3>
+              <p className="text-muted text-sm leading-relaxed mb-4">
+                분석 옵션 2개 이상, 변경 파일 6개 이상, 다중 리뷰 포커스 등
+                복잡도가 임계치를 넘으면 자동으로 Team Mode가 활성화됩니다.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {["auto-detect", "team 키워드", "solo 오버라이드", "N:agent-type"].map((tag) => (
+                  <span key={tag} className="text-xs font-mono text-dim px-2 py-0.5 bg-elevated rounded">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="p-6 bg-card border border-border rounded-lg">
+              <h3 className="text-sm font-medium mb-3">단일 팀, 워커 로테이션</h3>
+              <p className="text-muted text-sm leading-relaxed mb-4">
+                세션당 하나의 팀을 생성하고, 각 단계마다 전문 에이전트를
+                교체합니다. 분석이 끝나면 분석 에이전트를 해제하고 계획 에이전트를
+                투입합니다.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {["TeamCreate", "워커 로테이션", "TeamDelete", "handoff"].map((tag) => (
+                  <span key={tag} className="text-xs font-mono text-dim px-2 py-0.5 bg-elevated rounded">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <h3 className="text-lg font-light mb-6">
+            단계별 <span className="text-accent">전문 에이전트</span>
+          </h3>
+          <div className="grid md:grid-cols-4 gap-4 mb-10">
+            {[
+              {
+                phase: "분석",
+                agents: [
+                  { name: "explore", desc: "코드베이스 구조 탐색" },
+                  { name: "analyst", desc: "성능/패턴 분석" },
+                  { name: "architect", desc: "의존성/리스크 분석" },
+                ],
+              },
+              {
+                phase: "계획",
+                agents: [
+                  { name: "planner", desc: "구현 전략 수립" },
+                  { name: "architect", desc: "아키텍처 리뷰" },
+                  { name: "critic", desc: "계획 도전/리스크" },
+                ],
+              },
+              {
+                phase: "구현",
+                agents: [
+                  { name: "executor", desc: "코드 구현" },
+                  { name: "designer", desc: "UI 컴포넌트" },
+                  { name: "test-engineer", desc: "테스트 작성" },
+                ],
+              },
+              {
+                phase: "리뷰",
+                agents: [
+                  { name: "code-reviewer", desc: "품질/SOLID" },
+                  { name: "security", desc: "OWASP 스캔" },
+                  { name: "verifier", desc: "테스트/빌드 검증" },
+                ],
+              },
+            ].map((group) => (
+              <div key={group.phase} className="p-4 bg-card border border-border rounded-lg">
+                <p className="text-accent font-mono text-xs mb-3">{group.phase}</p>
+                <div className="space-y-2">
+                  {group.agents.map((agent) => (
+                    <div key={agent.name}>
+                      <p className="text-sm font-mono">{agent.name}</p>
+                      <p className="text-xs text-dim">{agent.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-4 bg-elevated border border-border rounded-lg">
+            <p className="text-xs text-dim">
+              <span className="text-accent font-mono">사전 요구사항</span>
+              {" — "}
+              Team Mode는{" "}
+              <a
+                href="https://github.com/nicobailey-omc/oh-my-claudecode"
+                className="text-accent hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                oh-my-claudecode
+              </a>{" "}
+              플러그인이 필요합니다. 미설치 시 기존 Single Mode로 동작합니다.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -278,6 +404,13 @@ export default function Home() {
                 0
               </span>
               <p className="mt-1">설정</p>
+            </div>
+            <div className="w-px bg-border" />
+            <div>
+              <span className="text-accent font-mono text-2xl font-light">
+                11
+              </span>
+              <p className="mt-1">에이전트</p>
             </div>
           </div>
         </div>
