@@ -18,37 +18,82 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+type OS = "mac" | "win";
+type Tool = "claude" | "cursor" | "codex" | "opencode";
+
+const toolLabels: Record<Tool, string> = {
+  claude: "Claude Code",
+  cursor: "Cursor",
+  codex: "Codex CLI",
+  opencode: "OpenCode",
+};
+
+const toolPaths: Record<Tool, string> = {
+  claude: "~/.claude/skills/",
+  cursor: "~/.cursor/skills/",
+  codex: "~/.codex/skills/",
+  opencode: "~/.config/opencode/skills/",
+};
+
+function getInstallCmd(os: OS, tool: Tool): string {
+  const base = "https://raw.githubusercontent.com/NewTurn2017/vibe-skills/main";
+  if (os === "mac") {
+    return `curl -fsSL ${base}/install.sh | bash -s -- --${tool}`;
+  }
+  return `irm ${base}/install.ps1 | iex -Args '-${tool[0].toUpperCase() + tool.slice(1)}'`;
+}
+
 function InstallTabs() {
-  const [tab, setTab] = useState<"mac" | "win">("mac");
-  const cmds = {
-    mac: "curl -fsSL https://raw.githubusercontent.com/NewTurn2017/vibe-skills/main/install.sh | bash",
-    win: 'irm https://raw.githubusercontent.com/NewTurn2017/vibe-skills/main/install.ps1 | iex',
-  };
+  const [os, setOs] = useState<OS>("mac");
+  const [tool, setTool] = useState<Tool>("claude");
+  const cmd = getInstallCmd(os, tool);
+
   return (
-    <div className="flex flex-col">
-      <div className="inline-flex mb-3 bg-elevated rounded-md p-0.5 text-xs font-mono">
+    <div className="flex flex-col gap-3">
+      {/* OS tabs */}
+      <div className="inline-flex bg-elevated rounded-md p-0.5 text-xs font-mono">
         <button
-          onClick={() => setTab("mac")}
-          className={`px-3 py-1 rounded cursor-pointer transition-colors ${tab === "mac" ? "bg-card text-text" : "text-dim hover:text-muted"}`}
+          onClick={() => setOs("mac")}
+          className={`px-3 py-1 rounded cursor-pointer transition-colors ${os === "mac" ? "bg-card text-text" : "text-dim hover:text-muted"}`}
         >
           macOS / Linux
         </button>
         <button
-          onClick={() => setTab("win")}
-          className={`px-3 py-1 rounded cursor-pointer transition-colors ${tab === "win" ? "bg-card text-text" : "text-dim hover:text-muted"}`}
+          onClick={() => setOs("win")}
+          className={`px-3 py-1 rounded cursor-pointer transition-colors ${os === "win" ? "bg-card text-text" : "text-dim hover:text-muted"}`}
         >
           Windows
         </button>
       </div>
+
+      {/* Tool tabs */}
+      <div className="inline-flex bg-elevated rounded-md p-0.5 text-xs font-mono">
+        {(["claude", "cursor", "codex", "opencode"] as Tool[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTool(t)}
+            className={`px-3 py-1 rounded cursor-pointer transition-colors ${tool === t ? "bg-card text-text" : "text-dim hover:text-muted"}`}
+          >
+            {toolLabels[t]}
+          </button>
+        ))}
+      </div>
+
+      {/* Command */}
       <div className="inline-flex items-center gap-4 bg-card border border-border rounded-lg px-5 py-3 max-w-full overflow-x-auto">
         <span className="text-dim font-mono text-sm select-none">
-          {tab === "mac" ? "$" : ">"}
+          {os === "mac" ? "$" : ">"}
         </span>
         <code className="font-mono text-sm text-text/90 whitespace-nowrap">
-          {cmds[tab]}
+          {cmd}
         </code>
-        <CopyButton text={cmds[tab]} />
+        <CopyButton text={cmd} />
       </div>
+
+      {/* Install path hint */}
+      <p className="text-xs text-dim font-mono">
+        {toolLabels[tool]} &rarr; {toolPaths[tool]}
+      </p>
     </div>
   );
 }
@@ -122,7 +167,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="animate-fade-up">
             <p className="text-accent font-mono text-xs tracking-widest uppercase mb-6">
-              Claude Code Skills
+              Agent Skills Standard
             </p>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight leading-[1.1] mb-6 animate-fade-up animate-delay-1">
@@ -130,18 +175,70 @@ export default function Home() {
             <br />
             <span className="text-muted">네 개의 단계.</span>
             <br />
-            <span className="text-muted">열한 개의 에이전트.</span>
+            <span className="text-muted">네 개의 도구.</span>
             <br />
             체계적인 개발.
           </h1>
           <p className="text-muted text-lg max-w-xl mb-12 animate-fade-up animate-delay-2">
             자연어를 분석, 계획, 구현, 리뷰된 코드로 바꾸는 AI 기반 워크플로우.
-            더 이상 즉흥적인 프롬프팅은 필요 없습니다.
+            Claude Code, Cursor, Codex CLI, OpenCode에서 동일하게 작동합니다.
           </p>
 
           <div className="animate-fade-up animate-delay-3">
             <InstallTabs />
           </div>
+        </div>
+      </section>
+
+      {/* Compatibility */}
+      <section className="pb-16 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {(
+              [
+                {
+                  name: "Claude Code",
+                  path: "~/.claude/skills/",
+                  invoke: "/vibe",
+                },
+                {
+                  name: "Cursor",
+                  path: "~/.cursor/skills/",
+                  invoke: "/vibe",
+                },
+                {
+                  name: "Codex CLI",
+                  path: "~/.codex/skills/",
+                  invoke: "$vibe",
+                },
+                {
+                  name: "OpenCode",
+                  path: "~/.config/opencode/skills/",
+                  invoke: "/vibe",
+                },
+              ] as const
+            ).map((tool) => (
+              <div
+                key={tool.name}
+                className="p-4 bg-card border border-border rounded-lg text-center"
+              >
+                <p className="text-sm font-medium mb-1">{tool.name}</p>
+                <p className="text-xs text-dim font-mono">{tool.invoke}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-dim text-center mt-4">
+            동일한 SKILL.md &mdash;{" "}
+            <a
+              href="https://agentskills.io"
+              className="text-accent hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Agent Skills
+            </a>{" "}
+            오픈 표준
+          </p>
         </div>
       </section>
 
@@ -372,14 +469,14 @@ export default function Home() {
           <h2 className="text-2xl font-light mb-4">시작하기</h2>
           <p className="text-muted mb-8 text-sm">
             <a
-              href="https://claude.ai/code"
+              href="https://agentskills.io"
               className="text-accent hover:underline"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Claude Code
+              Agent Skills
             </a>{" "}
-            CLI가 설치되어 있어야 합니다.
+            표준을 지원하는 모든 AI 코딩 도구에서 사용할 수 있습니다.
           </p>
           <div className="mb-10 flex justify-center">
             <InstallTabs />
@@ -394,9 +491,9 @@ export default function Home() {
             <div className="w-px bg-border" />
             <div>
               <span className="text-accent font-mono text-2xl font-light">
-                1
+                4
               </span>
-              <p className="mt-1">명령어</p>
+              <p className="mt-1">도구</p>
             </div>
             <div className="w-px bg-border" />
             <div>
@@ -423,6 +520,14 @@ export default function Home() {
             <span className="text-accent/60">vibe</span> skills
           </span>
           <div className="flex gap-6">
+            <a
+              href="https://agentskills.io"
+              className="hover:text-muted transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Agent Skills
+            </a>
             <a
               href="https://github.com/NewTurn2017/vibe-skills"
               className="hover:text-muted transition-colors"
