@@ -20,6 +20,7 @@ function CopyButton({ text }: { text: string }) {
 
 type OS = "mac" | "win";
 type Tool = "claude" | "cursor" | "codex" | "opencode";
+type Scope = "user" | "project";
 
 const toolLabels: Record<Tool, string> = {
   claude: "Claude Code",
@@ -28,25 +29,47 @@ const toolLabels: Record<Tool, string> = {
   opencode: "OpenCode",
 };
 
-const toolPaths: Record<Tool, string> = {
+const userPaths: Record<Tool, string> = {
   claude: "~/.claude/skills/",
   cursor: "~/.cursor/skills/",
   codex: "~/.codex/skills/",
   opencode: "~/.config/opencode/skills/",
 };
 
-function getInstallCmd(os: OS, tool: Tool): string {
+const projectPaths: Record<Tool, string> = {
+  claude: ".claude/skills/",
+  cursor: ".cursor/skills/",
+  codex: ".codex/skills/",
+  opencode: ".opencode/skills/",
+};
+
+const scopeLabels: Record<Scope, string> = {
+  user: "User",
+  project: "Project",
+};
+
+const scopeDescs: Record<Scope, string> = {
+  user: "모든 프로젝트에서 사용",
+  project: "현재 프로젝트 전용, 팀 공유 가능",
+};
+
+function getInstallCmd(os: OS, tool: Tool, scope: Scope): string {
   const base = "https://raw.githubusercontent.com/NewTurn2017/vibe-skills/main";
+  const scopeFlag = scope === "project" ? " --project" : "";
   if (os === "mac") {
-    return `curl -fsSL ${base}/install.sh | bash -s -- --${tool}`;
+    return `curl -fsSL ${base}/install.sh | bash -s -- --${tool}${scopeFlag}`;
   }
-  return `irm ${base}/install.ps1 | iex -Args '-${tool[0].toUpperCase() + tool.slice(1)}'`;
+  const toolFlag = `-${tool[0].toUpperCase() + tool.slice(1)}`;
+  const psScope = scope === "project" ? " -Project" : "";
+  return `irm ${base}/install.ps1 | iex -Args '${toolFlag}${psScope}'`;
 }
 
 function InstallTabs() {
   const [os, setOs] = useState<OS>("mac");
   const [tool, setTool] = useState<Tool>("claude");
-  const cmd = getInstallCmd(os, tool);
+  const [scope, setScope] = useState<Scope>("user");
+  const cmd = getInstallCmd(os, tool, scope);
+  const paths = scope === "user" ? userPaths : projectPaths;
 
   return (
     <div className="flex flex-col gap-3">
@@ -66,17 +89,33 @@ function InstallTabs() {
         </button>
       </div>
 
-      {/* Tool tabs */}
-      <div className="inline-flex bg-elevated rounded-md p-0.5 text-xs font-mono">
-        {(["claude", "cursor", "codex", "opencode"] as Tool[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTool(t)}
-            className={`px-3 py-1 rounded cursor-pointer transition-colors ${tool === t ? "bg-card text-text" : "text-dim hover:text-muted"}`}
-          >
-            {toolLabels[t]}
-          </button>
-        ))}
+      {/* Scope + Tool tabs */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Scope tabs */}
+        <div className="inline-flex bg-elevated rounded-md p-0.5 text-xs font-mono">
+          {(["user", "project"] as Scope[]).map((s) => (
+            <button
+              key={s}
+              onClick={() => setScope(s)}
+              className={`px-3 py-1 rounded cursor-pointer transition-colors ${scope === s ? "bg-accent/20 text-accent" : "text-dim hover:text-muted"}`}
+            >
+              {scopeLabels[s]}
+            </button>
+          ))}
+        </div>
+
+        {/* Tool tabs */}
+        <div className="inline-flex bg-elevated rounded-md p-0.5 text-xs font-mono">
+          {(["claude", "cursor", "codex", "opencode"] as Tool[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTool(t)}
+              className={`px-3 py-1 rounded cursor-pointer transition-colors ${tool === t ? "bg-card text-text" : "text-dim hover:text-muted"}`}
+            >
+              {toolLabels[t]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Command */}
@@ -90,9 +129,12 @@ function InstallTabs() {
         <CopyButton text={cmd} />
       </div>
 
-      {/* Install path hint */}
+      {/* Install path + scope hint */}
       <p className="text-xs text-dim font-mono">
-        {toolLabels[tool]} &rarr; {toolPaths[tool]}
+        {toolLabels[tool]} &rarr; {paths[tool]}
+        <span className="text-accent/60 ml-2">
+          ({scopeDescs[scope]})
+        </span>
       </p>
     </div>
   );
@@ -198,22 +240,26 @@ export default function Home() {
               [
                 {
                   name: "Claude Code",
-                  path: "~/.claude/skills/",
+                  user: "~/.claude/skills/",
+                  project: ".claude/skills/",
                   invoke: "/vibe",
                 },
                 {
                   name: "Cursor",
-                  path: "~/.cursor/skills/",
+                  user: "~/.cursor/skills/",
+                  project: ".cursor/skills/",
                   invoke: "/vibe",
                 },
                 {
                   name: "Codex CLI",
-                  path: "~/.codex/skills/",
+                  user: "~/.codex/skills/",
+                  project: ".codex/skills/",
                   invoke: "$vibe",
                 },
                 {
                   name: "OpenCode",
-                  path: "~/.config/opencode/skills/",
+                  user: "~/.config/opencode/skills/",
+                  project: ".opencode/skills/",
                   invoke: "/vibe",
                 },
               ] as const
@@ -224,6 +270,14 @@ export default function Home() {
               >
                 <p className="text-sm font-medium mb-1">{tool.name}</p>
                 <p className="text-xs text-dim font-mono">{tool.invoke}</p>
+                <div className="mt-2 space-y-0.5">
+                  <p className="text-[10px] text-dim font-mono">
+                    <span className="text-accent/50">user</span> {tool.user}
+                  </p>
+                  <p className="text-[10px] text-dim font-mono">
+                    <span className="text-accent/50">project</span> {tool.project}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -237,7 +291,7 @@ export default function Home() {
             >
               Agent Skills
             </a>{" "}
-            오픈 표준
+            오픈 표준 &mdash; User scope + Project scope 지원
           </p>
         </div>
       </section>
@@ -463,6 +517,52 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Scope */}
+      <section className="pb-32 px-6">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-accent font-mono text-xs tracking-widest uppercase mb-6">
+            NEW in v3.2
+          </p>
+          <h2 className="text-2xl font-light mb-4">
+            <span className="text-accent">User</span> 또는{" "}
+            <span className="text-accent">Project</span> — 스코프를 선택하세요
+          </h2>
+          <p className="text-muted leading-relaxed mb-8 max-w-2xl">
+            혼자 사용하는 스킬은 User scope로 글로벌 설치하고,
+            팀과 공유할 스킬은 Project scope로 프로젝트에 설치하세요.
+            두 스코프를 동시에 사용할 수 있으며, Project scope가 우선합니다.
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="p-6 bg-card border border-border rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-accent font-mono text-xs px-2 py-0.5 bg-accent/10 rounded">--user</span>
+                <span className="text-xs text-dim">기본값</span>
+              </div>
+              <h3 className="text-sm font-medium mb-2">User scope</h3>
+              <p className="text-muted text-sm leading-relaxed mb-4">
+                홈 디렉토리에 설치됩니다. 한 번 설치하면 어떤 프로젝트에서든 <code className="text-accent/80 font-mono text-xs">/vibe</code>로 호출할 수 있습니다.
+              </p>
+              <div className="bg-elevated rounded-md px-3 py-2">
+                <code className="font-mono text-xs text-dim">~/.claude/skills/vibe/SKILL.md</code>
+              </div>
+            </div>
+            <div className="p-6 bg-card border border-border rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-accent font-mono text-xs px-2 py-0.5 bg-accent/10 rounded">--project</span>
+              </div>
+              <h3 className="text-sm font-medium mb-2">Project scope</h3>
+              <p className="text-muted text-sm leading-relaxed mb-4">
+                프로젝트 루트에 설치됩니다. git에 커밋하면 팀원 전체가 별도 설치 없이 동일한 스킬을 사용할 수 있습니다.
+              </p>
+              <div className="bg-elevated rounded-md px-3 py-2">
+                <code className="font-mono text-xs text-dim">.claude/skills/vibe/SKILL.md</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Install */}
       <section id="install" className="pb-32 px-6">
         <div className="max-w-5xl mx-auto text-center">
@@ -498,9 +598,9 @@ export default function Home() {
             <div className="w-px bg-border" />
             <div>
               <span className="text-accent font-mono text-2xl font-light">
-                0
+                2
               </span>
-              <p className="mt-1">설정</p>
+              <p className="mt-1">스코프</p>
             </div>
             <div className="w-px bg-border" />
             <div>
